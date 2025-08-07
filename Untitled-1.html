@@ -2,38 +2,42 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Cubo 3D com Som e Música Futurista</title>
+  <title>Cubo 3D Adaptado</title>
   <style>
-    body {
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
       height: 100vh;
+      width: 100vw;
       background-color: black;
       display: flex;
       justify-content: center;
       align-items: center;
       perspective: 2000px;
       overflow: hidden;
-      cursor: grab;
-      position: relative;
+      touch-action: none;
     }
 
-    video {
-      position: absolute;
+    video.background {
+      position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
+      width: 100vw;
+      height: 100vh;
       object-fit: cover;
-      z-index: -2;
+      z-index: -1;
     }
 
     .scene {
-      width: 1000px;
-      height: 1000px;
+      width: 500px;
+      height: 500px;
       position: relative;
       transform-style: preserve-3d;
       transition: transform 0.2s ease-out;
-      z-index: 1;
     }
 
     .scene::after {
@@ -51,14 +55,13 @@
 
     .face {
       position: absolute;
-      width: 1000px;
-      height: 1000px;
+      width: 500px;
+      height: 500px;
       border: 2px solid rgba(255, 255, 255, 0.3);
-      box-sizing: border-box;
-      overflow: hidden;
       box-shadow: 0 0 120px rgba(255, 255, 255, 0.7);
       filter: brightness(1.3) contrast(1.4);
       transition: filter 0.3s ease, box-shadow 0.3s ease;
+      overflow: hidden;
     }
 
     .scene:hover .face {
@@ -70,53 +73,43 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      display: block;
     }
 
-    .front  { transform: translateZ(500px); }
-    .back   { transform: rotateY(180deg) translateZ(500px); }
-    .right  { transform: rotateY(90deg) translateZ(500px); }
-    .left   { transform: rotateY(-90deg) translateZ(500px); }
-    .top    { transform: rotateX(90deg) translateZ(500px); }
-    .bottom { transform: rotateX(-90deg) translateZ(500px); }
+    .front  { transform: translateZ(250px); }
+    .back   { transform: rotateY(180deg) translateZ(250px); }
+    .right  { transform: rotateY(90deg) translateZ(250px); }
+    .left   { transform: rotateY(-90deg) translateZ(250px); }
+    .top    { transform: rotateX(90deg) translateZ(250px); }
+    .bottom { transform: rotateX(-90deg) translateZ(250px); }
 
-    .particle {
+    /* Botão invisível para autoplay */
+    #playAudio {
       position: absolute;
-      background-color: rgba(255, 255, 255, 0.8);
-      border-radius: 50%;
-      width: 5px;
-      height: 5px;
-      pointer-events: none;
-      animation: moveParticle 10s linear infinite, sparkle 1s ease-in-out infinite;
-    }
-
-    @keyframes moveParticle {
-      0% { opacity: 1; transform: scale(1) translateX(0) translateY(0); }
-      100% { opacity: 0.5; transform: scale(0.5) translateX(100px) translateY(100px); }
-    }
-
-    @keyframes sparkle {
-      0% { opacity: 0.8; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(1.5); }
-      100% { opacity: 0.8; transform: scale(1); }
+      top: 0;
+      left: 0;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      z-index: -9999;
     }
   </style>
 </head>
 <body>
 
-  <!-- 🎥 Vídeo de fundo -->
-  <video autoplay loop muted>
-    <source src="fundo.mp4" type="video/mp4">
-    Seu navegador não suporta o elemento de vídeo.
+  <!-- Vídeo de fundo -->
+  <video class="background" autoplay muted loop>
+    <source src="video.mp4" type="video/mp4">
   </video>
 
-  <!-- 🔊 Música de fundo futurista -->
-  <audio id="backgroundMusic" src="futuristic-music.mp3" autoplay loop></audio>
+  <!-- Música de fundo -->
+  <audio id="musica" loop>
+    <source src="fundo.mp3" type="audio/mp3">
+  </audio>
 
-  <!-- 🔉 Som de movimento futurista -->
-  <audio id="moveSound" src="futuristic-move.mp3"></audio>
+  <!-- Botão invisível para autoplay -->
+  <button id="playAudio">Play</button>
 
-  <!-- 🧊 Cubo 3D -->
+  <!-- Cubo -->
   <div class="scene" id="cube">
     <div class="face front"><img src="purple-370132_1920.png" alt="Frente"></div>
     <div class="face back"><img src="purple-370132_1920.png" alt="Trás"></div>
@@ -126,106 +119,125 @@
     <div class="face bottom"><img src="purple-370132_1920.png" alt="Base"></div>
   </div>
 
-  <!-- ✨ Partículas -->
-  <div id="particles-container"></div>
+  <!-- Som de clique -->
+  <audio id="efeito">
+    <source src="click.mp3" type="audio/mp3">
+  </audio>
 
   <script>
     const cube = document.getElementById("cube");
-    const particleContainer = document.getElementById("particles-container");
-
-    const moveSound = document.getElementById("moveSound");
-    moveSound.volume = 0.5;
-
-    const bgMusic = document.getElementById("backgroundMusic");
-    bgMusic.volume = 0.3;
+    const efeito = document.getElementById("efeito");
+    const musica = document.getElementById("musica");
+    const playBtn = document.getElementById("playAudio");
 
     let rotateX = 0;
     let rotateY = 0;
     let autoRotate = true;
     let idleTimeout;
 
-    function updateRotation(playSound = false) {
+    function updateRotation() {
       cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-      if (playSound) {
-        moveSound.currentTime = 0;
-        moveSound.play();
-      }
     }
 
-    function startAutoRotate() {
-      autoRotate = true;
+    function playSound() {
+      efeito.currentTime = 0;
+      efeito.play();
     }
 
     function stopAutoRotate() {
       autoRotate = false;
       clearTimeout(idleTimeout);
       idleTimeout = setTimeout(() => {
-        startAutoRotate();
+        autoRotate = true;
       }, 3000);
     }
 
-    let lastMouseX = null;
-    let lastMouseY = null;
+    // Mouse
+    let lastX, lastY;
 
     document.addEventListener("mousemove", (e) => {
       stopAutoRotate();
-
-      if (lastMouseX !== null && lastMouseY !== null) {
-        const deltaX = e.clientX - lastMouseX;
-        const deltaY = e.clientY - lastMouseY;
-
-        rotateY += deltaX * 0.3;
-        rotateX -= deltaY * 0.3;
-
-        updateRotation(true);
+      if (lastX !== undefined && lastY !== undefined) {
+        rotateY += (e.clientX - lastX) * 0.3;
+        rotateX -= (e.clientY - lastY) * 0.3;
+        updateRotation();
       }
-
-      lastMouseX = e.clientX;
-      lastMouseY = e.clientY;
+      lastX = e.clientX;
+      lastY = e.clientY;
     });
 
-    let keysPressed = {};
+    // Toque (mobile)
+    let touchStartX, touchStartY;
+    document.addEventListener("touchstart", (e) => {
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+    });
 
+    document.addEventListener("touchmove", (e) => {
+      e.preventDefault();
+      stopAutoRotate();
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+      rotateY += deltaX * 0.3;
+      rotateX -= deltaY * 0.3;
+      updateRotation();
+      playSound();
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+    }, { passive: false });
+
+    // Teclado
     document.addEventListener("keydown", (e) => {
       stopAutoRotate();
-      keysPressed[e.key] = true;
-
-      if (keysPressed["ArrowUp"] || keysPressed["w"]) rotateX -= 10;
-      if (keysPressed["ArrowDown"] || keysPressed["s"]) rotateX += 10;
-      if (keysPressed["ArrowLeft"] || keysPressed["a"]) rotateY -= 10;
-      if (keysPressed["ArrowRight"] || keysPressed["d"]) rotateY += 10;
-
-      updateRotation(true);
-    });
-
-    document.addEventListener("keyup", (e) => {
-      keysPressed[e.key] = false;
-    });
-
-    function createStars() {
-      const numStars = 20;
-      for (let i = 0; i < numStars; i++) {
-        const star = document.createElement("div");
-        star.classList.add("particle");
-        star.style.left = `${Math.random() * 100}%`;
-        star.style.top = `${Math.random() * 100}%`;
-        particleContainer.appendChild(star);
-
-        setTimeout(() => {
-          star.remove();
-        }, 10000);
+      switch (e.key) {
+        case "ArrowUp":
+        case "w":
+        case "W":
+          rotateX -= 10;
+          break;
+        case "ArrowDown":
+        case "s":
+        case "S":
+          rotateX += 10;
+          break;
+        case "ArrowLeft":
+        case "a":
+        case "A":
+          rotateY -= 10;
+          break;
+        case "ArrowRight":
+        case "d":
+        case "D":
+          rotateY += 10;
+          break;
       }
-    }
+      updateRotation();
+      playSound();
+    });
 
-    setInterval(createStars, 1000);
-
+    // Rotação automática
     setInterval(() => {
       if (autoRotate) {
-        rotateX += 0.3;
         rotateY += 0.6;
+        rotateX += 0.3;
         updateRotation();
       }
     }, 30);
+
+    // Ativar música após interação
+    function iniciarMusica() {
+      musica.play().catch(() => {
+        // erro silencioso se bloqueado
+      });
+      document.removeEventListener("click", iniciarMusica);
+      document.removeEventListener("touchstart", iniciarMusica);
+    }
+
+    document.addEventListener("click", iniciarMusica);
+    document.addEventListener("touchstart", iniciarMusica);
   </script>
+
 </body>
 </html>
