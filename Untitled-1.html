@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -29,8 +28,8 @@
     }
 
     .scene {
-      width: 900px;
-      height: 900px;
+      width: 1000px;
+      height: 1000px;
       position: relative;
       transform-style: preserve-3d;
       transition: transform 0.2s ease-out;
@@ -52,8 +51,8 @@
 
     .face {
       position: absolute;
-      width: 900px;
-      height: 900px;
+      width: 1000px;
+      height: 1000px;
       border: 2px solid rgba(255, 255, 255, 0.3);
       box-sizing: border-box;
       overflow: hidden;
@@ -74,12 +73,12 @@
       display: block;
     }
 
-    .front  { transform: translateZ(450px); }
-    .back   { transform: rotateY(180deg) translateZ(450px); }
-    .right  { transform: rotateY(90deg) translateZ(450px); }
-    .left   { transform: rotateY(-90deg) translateZ(450px); }
-    .top    { transform: rotateX(90deg) translateZ(450px); }
-    .bottom { transform: rotateX(-90deg) translateZ(450px); }
+    .front  { transform: translateZ(500px); }
+    .back   { transform: rotateY(180deg) translateZ(500px); }
+    .right  { transform: rotateY(90deg) translateZ(500px); }
+    .left   { transform: rotateY(-90deg) translateZ(500px); }
+    .top    { transform: rotateX(90deg) translateZ(500px); }
+    .bottom { transform: rotateX(-90deg) translateZ(500px); }
 
     .particle {
       position: absolute;
@@ -185,7 +184,6 @@
       lastMouseY = e.clientY;
     });
 
-    // 🎮 Controles com teclas
     let keysPressed = {};
 
     document.addEventListener("keydown", (e) => {
@@ -204,7 +202,6 @@
       keysPressed[e.key] = false;
     });
 
-    // ✨ Estrelas
     function createStars() {
       const numStars = 20;
       for (let i = 0; i < numStars; i++) {
