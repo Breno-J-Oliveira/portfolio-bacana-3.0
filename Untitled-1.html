@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Cubo 3D Adaptado</title>
+  <title>Cubo 3D com Som</title>
   <style>
     * {
       margin: 0;
@@ -33,32 +33,30 @@
     }
 
     .scene {
-      width: 500px;
-      height: 500px;
+      width: 600px;
+      height: 600px;
       position: relative;
       transform-style: preserve-3d;
       transition: transform 0.2s ease-out;
     }
 
-    .scene::after {
-      content: "";
-      position: absolute;
-      top: 100%;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: inherit;
-      transform: scaleY(-1);
-      opacity: 0.3;
-      z-index: -1;
+    @media (max-width: 1024px) {
+      .scene {
+        width: 80vw;
+        height: 80vw;
+      }
+      .face {
+        width: 100%;
+        height: 100%;
+      }
     }
 
     .face {
       position: absolute;
-      width: 500px;
-      height: 500px;
+      width: 600px;
+      height: 600px;
       border: 2px solid rgba(255, 255, 255, 0.3);
-      box-shadow: 0 0 120px rgba(255, 255, 255, 0.7);
+      box-shadow: 0 0 60px rgba(255, 255, 255, 0.7);
       filter: brightness(1.3) contrast(1.4);
       transition: filter 0.3s ease, box-shadow 0.3s ease;
       overflow: hidden;
@@ -66,7 +64,7 @@
 
     .scene:hover .face {
       filter: brightness(1.8) contrast(2);
-      box-shadow: 0 0 200px rgba(255, 255, 255, 1);
+      box-shadow: 0 0 120px rgba(255, 255, 255, 1);
     }
 
     .face img {
@@ -75,30 +73,19 @@
       object-fit: cover;
     }
 
-    .front  { transform: translateZ(250px); }
-    .back   { transform: rotateY(180deg) translateZ(250px); }
-    .right  { transform: rotateY(90deg) translateZ(250px); }
-    .left   { transform: rotateY(-90deg) translateZ(250px); }
-    .top    { transform: rotateX(90deg) translateZ(250px); }
-    .bottom { transform: rotateX(-90deg) translateZ(250px); }
-
-    /* Botão invisível para autoplay */
-    #playAudio {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 1px;
-      height: 1px;
-      opacity: 0;
-      z-index: -9999;
-    }
+    .front  { transform: translateZ(300px); }
+    .back   { transform: rotateY(180deg) translateZ(300px); }
+    .right  { transform: rotateY(90deg) translateZ(300px); }
+    .left   { transform: rotateY(-90deg) translateZ(300px); }
+    .top    { transform: rotateX(90deg) translateZ(300px); }
+    .bottom { transform: rotateX(-90deg) translateZ(300px); }
   </style>
 </head>
 <body>
 
   <!-- Vídeo de fundo -->
   <video class="background" autoplay muted loop>
-    <source src="video.mp4" type="video/mp4">
+    <source src="video1.mp4" type="video/mp4">
   </video>
 
   <!-- Música de fundo -->
@@ -106,8 +93,15 @@
     <source src="fundo.mp3" type="audio/mp3">
   </audio>
 
-  <!-- Botão invisível para autoplay -->
-  <button id="playAudio">Play</button>
+  <!-- Som de rotação -->
+  <audio id="giro">
+    <source src="giro.mp3" type="audio/mp3">
+  </audio>
+
+  <!-- Som de clique -->
+  <audio id="click">
+    <source src="click.mp3" type="audio/mp3">
+  </audio>
 
   <!-- Cubo -->
   <div class="scene" id="cube">
@@ -119,54 +113,75 @@
     <div class="face bottom"><img src="purple-370132_1920.png" alt="Base"></div>
   </div>
 
-  <!-- Som de clique -->
-  <audio id="efeito">
-    <source src="click.mp3" type="audio/mp3">
-  </audio>
-
   <script>
     const cube = document.getElementById("cube");
-    const efeito = document.getElementById("efeito");
+    const click = document.getElementById("click");
+    const giro = document.getElementById("giro");
     const musica = document.getElementById("musica");
-    const playBtn = document.getElementById("playAudio");
 
     let rotateX = 0;
     let rotateY = 0;
     let autoRotate = true;
     let idleTimeout;
+    let isGiroPlaying = false;
 
     function updateRotation() {
       cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
     }
 
-    function playSound() {
-      efeito.currentTime = 0;
-      efeito.play();
+    function playClick() {
+      if (click && click.readyState >= 2) {
+        click.currentTime = 0;
+        click.play().catch(() => {});
+      }
     }
+
+    function tryPlayGiro() {
+      if (!isGiroPlaying && giro.readyState >= 2) {
+        isGiroPlaying = true;
+        giro.currentTime = 0;
+        giro.play().catch(() => {});
+      }
+    }
+
+    giro.addEventListener("ended", () => {
+      isGiroPlaying = false;
+    });
 
     function stopAutoRotate() {
       autoRotate = false;
       clearTimeout(idleTimeout);
-      idleTimeout = setTimeout(() => {
-        autoRotate = true;
-      }, 3000);
+      idleTimeout = setTimeout(() => autoRotate = true, 3000);
     }
 
-    // Mouse
-    let lastX, lastY;
+    function ativarMusica() {
+      musica.play().catch(() => {});
+      document.removeEventListener("click", ativarMusica);
+      document.removeEventListener("touchstart", ativarMusica);
+    }
 
+    document.addEventListener("click", ativarMusica);
+    document.addEventListener("touchstart", ativarMusica);
+
+    document.addEventListener("click", (e) => {
+      if (e.target === document.body || e.target === cube) {
+        playClick();
+      }
+    });
+
+    let lastX, lastY;
     document.addEventListener("mousemove", (e) => {
       stopAutoRotate();
       if (lastX !== undefined && lastY !== undefined) {
         rotateY += (e.clientX - lastX) * 0.3;
         rotateX -= (e.clientY - lastY) * 0.3;
         updateRotation();
+        tryPlayGiro();
       }
       lastX = e.clientX;
       lastY = e.clientY;
     });
 
-    // Toque (mobile)
     let touchStartX, touchStartY;
     document.addEventListener("touchstart", (e) => {
       const touch = e.touches[0];
@@ -183,12 +198,11 @@
       rotateY += deltaX * 0.3;
       rotateX -= deltaY * 0.3;
       updateRotation();
-      playSound();
+      tryPlayGiro();
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
     }, { passive: false });
 
-    // Teclado
     document.addEventListener("keydown", (e) => {
       stopAutoRotate();
       switch (e.key) {
@@ -214,10 +228,9 @@
           break;
       }
       updateRotation();
-      playSound();
+      tryPlayGiro();
     });
 
-    // Rotação automática
     setInterval(() => {
       if (autoRotate) {
         rotateY += 0.6;
@@ -225,19 +238,6 @@
         updateRotation();
       }
     }, 30);
-
-    // Ativar música após interação
-    function iniciarMusica() {
-      musica.play().catch(() => {
-        // erro silencioso se bloqueado
-      });
-      document.removeEventListener("click", iniciarMusica);
-      document.removeEventListener("touchstart", iniciarMusica);
-    }
-
-    document.addEventListener("click", iniciarMusica);
-    document.addEventListener("touchstart", iniciarMusica);
   </script>
-
 </body>
 </html>
